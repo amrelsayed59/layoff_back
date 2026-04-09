@@ -1,0 +1,33 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model LayoffStory {
+  id           Int      @id @default(autoincrement())
+  company      String?
+  role         String
+  industry     String
+  layoffDate   DateTime
+  reason       String
+  story        String
+  isAnonymous  Boolean  @default(false)
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+}
