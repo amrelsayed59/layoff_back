@@ -1,6 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
+import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
@@ -13,6 +23,11 @@ export class StoriesController {
   @Post()
   create(@Body() createStoryDto: CreateStoryDto) {
     return this.storiesService.createStory(createStoryDto);
+  }
+
+  @Post(':id/report')
+  report(@Param('id') id: string, @Body() dto: CreateReportDto) {
+    return this.storiesService.reportStory(id, dto);
   }
 
   @Get()
@@ -42,7 +57,17 @@ export class StoriesController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('admin')
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStatusDto) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStatusDto,
+  ) {
     return this.storiesService.updateStatus(id, updateStatusDto.status);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
+  @Patch(':id/unapprove')
+  unapprove(@Param('id') id: string) {
+    return this.storiesService.unapprove(id);
   }
 }

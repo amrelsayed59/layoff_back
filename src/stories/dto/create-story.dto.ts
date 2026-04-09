@@ -19,6 +19,10 @@ export class CreateStoryDto {
   @IsNotEmpty()
   industry: string;
 
+  @IsString()
+  @IsOptional()
+  location?: string;
+
   @IsDateString()
   @IsNotEmpty()
   layoffDate: Date;
@@ -26,6 +30,10 @@ export class CreateStoryDto {
   @IsString()
   @IsNotEmpty()
   reason: string;
+
+  @IsString()
+  @IsOptional()
+  severance?: string;
 
   @IsString()
   @IsNotEmpty()

@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    StoriesModule, 
+    StoriesModule,
     PrismaModule,
     AuthModule,
     ConfigModule.forRoot({

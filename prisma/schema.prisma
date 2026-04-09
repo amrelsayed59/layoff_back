@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,23 +6,86 @@ datasource db {
   provider = "postgresql"
 }
 
+enum StoryStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ReportReason {
+  spam
+  harassment
+  doxxing
+  fake
+  other
+}
+
+enum ModerationAction {
+  approve
+  reject
+  unapprove
+}
+
 model LayoffStory {
-  id           Int      @id @default(autoincrement())
-  company      String?
-  role         String
-  industry     String
-  layoffDate   DateTime
-  reason       String
-  story        String
-  isAnonymous  Boolean  @default(false)
-  status       String   @default("pending")
-  createdAt    DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  company     String?
+  role        String
+  industry    String
+  location    String?
+  layoffDate  DateTime
+  reason      String
+  severance   String?
+  story       String
+  isAnonymous Boolean  @default(false)
+  status      StoryStatus @default(pending)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reports     StoryReport[]
+  events      ModerationEvent[]
+
+  @@index([status, createdAt])
+  @@index([industry])
+  @@index([reason])
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   role      String   @default("admin")
   createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+
+  moderationEvents ModerationEvent[]
+}
+
+model StoryReport {
+  id        Int          @id @default(autoincrement())
+  storyId   Int
+  reason    ReportReason
+  message   String?
+  createdAt DateTime     @default(now())
+
+  story LayoffStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId, createdAt])
+  @@index([reason])
+}
+
+model ModerationEvent {
+  id         Int              @id @default(autoincrement())
+  storyId    Int
+  actorId    Int
+  action     ModerationAction
+  fromStatus StoryStatus?
+  toStatus   StoryStatus?
+  note       String?
+  createdAt  DateTime         @default(now())
+
+  story LayoffStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  actor User       @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([storyId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
 }
