@@ -20,6 +20,11 @@ import { Roles } from '../auth/roles.decorator';
 export class StoriesController {
   constructor(private readonly storiesService: StoriesService) {}
 
+  @Get('test')
+  test() {
+    return { ok: true };
+  }
+
   @Post()
   create(@Body() createStoryDto: CreateStoryDto) {
     return this.storiesService.createStory(createStoryDto);
