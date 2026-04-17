@@ -157,8 +157,32 @@ export class StoriesService {
   }
 
   /**
-   * Returns approved stories with optional pagination and filtering.
-   * Keeps the response shape backward-compatible (array of transformed stories).
+   * Builds the Prisma `where` clause for approved stories with optional filters.
+   * Used by both {@link getApprovedStories} `findMany` and `count` so filters stay in sync.
+   */
+  private buildApprovedStoriesWhere(filters: {
+    search?: string;
+    industry?: string;
+    reason?: string;
+  }): Prisma.LayoffStoryWhereInput {
+    return {
+      status: 'approved',
+      ...(filters.industry ? { industry: filters.industry } : {}),
+      ...(filters.reason ? { reason: filters.reason } : {}),
+      ...(filters.search
+        ? {
+            OR: [
+              { role: { contains: filters.search, mode: 'insensitive' } },
+              { story: { contains: filters.search, mode: 'insensitive' } },
+              { company: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+  }
+
+  /**
+   * Returns approved stories with pagination, total count, and optional filtering.
    */
   async getApprovedStories(query: ApprovedStoriesQuery = {}) {
     const page =
@@ -177,26 +201,22 @@ export class StoriesService {
     const industry = (query.industry ?? '').trim();
     const reason = (query.reason ?? '').trim();
 
-    const stories = await this.prisma.layoffStory.findMany({
-      where: {
-        status: 'approved',
-        ...(industry ? { industry } : {}),
-        ...(reason ? { reason } : {}),
-        ...(search
-          ? {
-              OR: [
-                { role: { contains: search, mode: 'insensitive' } },
-                { story: { contains: search, mode: 'insensitive' } },
-                { company: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-    });
-    return stories.map((s) => this.transformStory(s));
+    const where = this.buildApprovedStoriesWhere({ search, industry, reason });
+
+    const [totalCount, rows] = await Promise.all([
+      this.prisma.layoffStory.count({ where }),
+      this.prisma.layoffStory.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      stories: rows.map((s) => this.transformStory(s)),
+      totalCount,
+    };
   }
 
   async getPendingStories() {
@@ -290,3 +310,8 @@ export class StoriesService {
     };
   }
 }
+
+/** Paginated approved stories payload (GET `/stories`). */
+export type ApprovedStoriesResponse = Awaited<
+  ReturnType<StoriesService['getApprovedStories']>
+>;
